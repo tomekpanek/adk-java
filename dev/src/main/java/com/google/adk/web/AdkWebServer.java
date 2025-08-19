@@ -125,6 +125,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ComponentScan(basePackages = {"com.google.adk.web", "com.google.adk.web.config"})
 public class AdkWebServer implements WebMvcConfigurer {
 
+  private static AgentLoader AGENT_LOADER;
+
   private static final Logger log = LoggerFactory.getLogger(AdkWebServer.class);
 
   @Value("${adk.web.ui.dir:#{null}}")
@@ -175,23 +177,33 @@ public class AdkWebServer implements WebMvcConfigurer {
     }
 
     try {
+      // If AGENT_LOADER is set (by start()), use it
+      if (AGENT_LOADER != null) {
+        var staticAgents = AGENT_LOADER.loadAgents();
+        agents.putAll(staticAgents);
+        log.info("Loaded {} static agents: {}", staticAgents.size(), staticAgents.keySet());
+      }
+
       // Create and use compiler loader
       AgentCompilerLoader compilerLoader = new AgentCompilerLoader(props);
       Map<String, BaseAgent> compiledAgents = compilerLoader.loadAgents();
       agents.putAll(compiledAgents);
-      log.info("Loaded {} compiled agents: {}", compiledAgents.size(), compiledAgents.keySet());
+      if (!compiledAgents.isEmpty())
+        log.info("Loaded {} compiled agents: {}", compiledAgents.size(), compiledAgents.keySet());
 
       // Create and use YAML hot loader
       AgentYamlHotLoader yamlLoader =
           new AgentYamlHotLoader(props, agents, runnerService, hotReloadingEnabled);
       Map<String, BaseAgent> yamlAgents = yamlLoader.loadAgents();
       agents.putAll(yamlAgents);
-      log.info("Loaded {} YAML agents: {}", yamlAgents.size(), yamlAgents.keySet());
+      if (!yamlAgents.isEmpty()) {
+        log.info("Loaded {} YAML agents: {}", yamlAgents.size(), yamlAgents.keySet());
 
-      // Start hot-reloading
-      if (yamlLoader.supportsHotReloading()) {
-        yamlLoader.start();
-        log.info("Started hot-reloading for YAML agents");
+        // Start hot-reloading
+        if (yamlLoader.supportsHotReloading()) {
+          yamlLoader.start();
+          log.info("Started hot-reloading for YAML agents");
+        }
       }
 
       return agents;
@@ -653,7 +665,7 @@ public class AdkWebServer implements WebMvcConfigurer {
       this.apiServerSpanExporter = apiServerSpanExporter;
       this.runnerService = runnerService;
       log.info(
-          "AgentController initialized with {} dynamic agents: {}",
+          "AgentController initialized with {} agents: {}",
           agentRegistry.size(),
           agentRegistry.keySet());
       if (agentRegistry.isEmpty()) {
@@ -718,7 +730,7 @@ public class AdkWebServer implements WebMvcConfigurer {
      */
     @GetMapping("/list-apps")
     public List<String> listApps() {
-      log.info("Listing apps from dynamic registry. Found: {}", agentRegistry.keySet());
+      log.info("Listing apps from registry. Found: {}", agentRegistry.keySet());
       List<String> appNames = new ArrayList<>(agentRegistry.keySet());
       Collections.sort(appNames);
       return appNames;
@@ -1870,5 +1882,14 @@ public class AdkWebServer implements WebMvcConfigurer {
         "org.apache.tomcat.websocket.DEFAULT_BUFFER_SIZE", String.valueOf(10 * 1024 * 1024));
     SpringApplication.run(AdkWebServer.class, args);
     log.info("AdkWebServer application started successfully.");
+  }
+
+  // TODO(vorburger): #later return Closeable, which can stop the server (and resets static)
+  public static synchronized void start(BaseAgent... agents) {
+    if (AGENT_LOADER != null) {
+      throw new IllegalStateException("AdkWebServer can only be started once.");
+    }
+    AGENT_LOADER = new AgentStaticLoader(agents);
+    main(new String[0]);
   }
 }

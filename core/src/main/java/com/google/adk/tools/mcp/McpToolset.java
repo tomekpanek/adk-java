@@ -165,6 +165,34 @@ public class McpToolset implements BaseToolset {
     this.toolFilter = toolFilter;
   }
 
+  /**
+   * Initializes the McpToolset with Steamable HTTP server parameters.
+   *
+   * @param connectionParams The Streamable HTTP connection parameters to the MCP server.
+   * @param objectMapper An ObjectMapper instance for parsing schemas.
+   * @param toolFilter An Optional containing either a ToolPredicate or a List of tool names.
+   */
+  public McpToolset(
+      StreamableHttpServerParameters connectionParams,
+      ObjectMapper objectMapper,
+      Optional<Object> toolFilter) {
+    Objects.requireNonNull(connectionParams);
+    Objects.requireNonNull(objectMapper);
+    this.objectMapper = objectMapper;
+    this.mcpSessionManager = new McpSessionManager(connectionParams);
+    this.toolFilter = toolFilter;
+  }
+
+  /**
+   * Initializes the McpToolset with Streamable HTTP server parameters, using the ObjectMapper used
+   * across the ADK and no tool filter.
+   *
+   * @param connectionParams The Streamable HTTP connection parameters to the MCP server.
+   */
+  public McpToolset(StreamableHttpServerParameters connectionParams) {
+    this(connectionParams, JsonBaseModel.getMapper(), Optional.empty());
+  }
+
   @Override
   public Flowable<BaseTool> getTools(ReadonlyContext readonlyContext) {
     return Flowable.fromCallable(

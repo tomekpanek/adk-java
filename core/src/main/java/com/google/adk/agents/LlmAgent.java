@@ -360,9 +360,10 @@ public class LlmAgent extends BaseAgent {
           } else if (callback instanceof BeforeModelCallbackSync beforeModelCallbackSyncInstance) {
             builder.add(
                 (BeforeModelCallback)
-                    (callbackContext, llmRequest) ->
+                    (callbackContext, llmRequestBuilder) ->
                         Maybe.fromOptional(
-                            beforeModelCallbackSyncInstance.call(callbackContext, llmRequest)));
+                            beforeModelCallbackSyncInstance.call(
+                                callbackContext, llmRequestBuilder)));
           } else {
             logger.warn(
                 "Invalid beforeModelCallback callback type: %s. Ignoring this callback.",
@@ -379,8 +380,9 @@ public class LlmAgent extends BaseAgent {
     public Builder beforeModelCallbackSync(BeforeModelCallbackSync beforeModelCallbackSync) {
       this.beforeModelCallback =
           ImmutableList.of(
-              (callbackContext, llmRequest) ->
-                  Maybe.fromOptional(beforeModelCallbackSync.call(callbackContext, llmRequest)));
+              (callbackContext, llmRequestBuilder) ->
+                  Maybe.fromOptional(
+                      beforeModelCallbackSync.call(callbackContext, llmRequestBuilder)));
       return this;
     }
 

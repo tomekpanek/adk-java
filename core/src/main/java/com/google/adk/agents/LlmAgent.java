@@ -100,6 +100,7 @@ public class LlmAgent extends BaseAgent {
   private final List<Object> toolsUnion;
   private final ImmutableList<BaseToolset> toolsets;
   private final Optional<GenerateContentConfig> generateContentConfig;
+  // TODO: Remove exampleProvider field - examples should only be provided via ExampleTool
   private final Optional<BaseExampleProvider> exampleProvider;
   private final IncludeContents includeContents;
 
@@ -280,6 +281,8 @@ public class LlmAgent extends BaseAgent {
       return this;
     }
 
+    // TODO: Remove these example provider methods and only use ExampleTool for providing examples.
+    // Direct example methods should be deprecated in favor of using ExampleTool consistently.
     @CanIgnoreReturnValue
     public Builder exampleProvider(BaseExampleProvider exampleProvider) {
       this.exampleProvider = exampleProvider;
@@ -789,6 +792,7 @@ public class LlmAgent extends BaseAgent {
     return generateContentConfig;
   }
 
+  // TODO: Remove this getter - examples should only be provided via ExampleTool
   public Optional<BaseExampleProvider> exampleProvider() {
     return exampleProvider;
   }

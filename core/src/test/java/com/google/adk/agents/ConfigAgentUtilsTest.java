@@ -20,8 +20,17 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.adk.agents.ConfigAgentUtils.ConfigurationException;
+import com.google.adk.examples.Example;
+import com.google.adk.models.LlmRequest;
+import com.google.adk.testing.TestUtils;
+import com.google.adk.tools.ExampleTool;
+import com.google.adk.tools.ToolContext;
 import com.google.adk.tools.mcp.McpToolset;
+import com.google.adk.utils.ComponentRegistry;
+import com.google.common.collect.ImmutableList;
+import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.Part;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -813,5 +822,103 @@ public final class ConfigAgentUtilsTest {
     assertThat(llmAgent.disallowTransferToParent()).isTrue();
     assertThat(llmAgent.disallowTransferToPeers()).isFalse();
     assertThat(llmAgent.model()).isPresent();
+  }
+
+  @Test
+  public void fromConfig_withGenerateContentConfigSafetySettings()
+      throws IOException, ConfigurationException {
+    File configFile = tempFolder.newFile("generate_content_config_safety.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        agent_class: LlmAgent
+        model: gemini-2.5-flash
+        name: root_agent
+        description: dice agent
+        instruction: You are a helpful assistant
+        generate_content_config:
+          safety_settings:
+            - category: HARM_CATEGORY_DANGEROUS_CONTENT
+              threshold: 'OFF'
+        """);
+    String configPath = configFile.getAbsolutePath();
+
+    BaseAgent agent = ConfigAgentUtils.fromConfig(configPath);
+
+    assertThat(agent).isInstanceOf(LlmAgent.class);
+    LlmAgent llmAgent = (LlmAgent) agent;
+    assertThat(llmAgent.name()).isEqualTo("root_agent");
+    assertThat(llmAgent.description()).isEqualTo("dice agent");
+    assertThat(llmAgent.model()).isPresent();
+    assertThat(llmAgent.model().get().modelName()).hasValue("gemini-2.5-flash");
+
+    assertThat(llmAgent.generateContentConfig()).isPresent();
+    GenerateContentConfig config = llmAgent.generateContentConfig().get();
+    assertThat(config).isNotNull();
+    assertThat(config.safetySettings()).isPresent();
+    assertThat(config.safetySettings().get()).hasSize(1);
+
+    // Verify the safety settings are parsed correctly
+    assertThat(config.safetySettings().get().get(0).category()).isPresent();
+    assertThat(config.safetySettings().get().get(0).category().get().toString())
+        .isEqualTo("HARM_CATEGORY_DANGEROUS_CONTENT");
+    assertThat(config.safetySettings().get().get(0).threshold()).isPresent();
+    assertThat(config.safetySettings().get().get(0).threshold().get().toString()).isEqualTo("OFF");
+  }
+
+  @Test
+  public void fromConfig_withExamplesList_appendsExamplesInFlow()
+      throws IOException, ConfigurationException {
+    // Register an ExampleTool instance under short name used by YAML
+    ComponentRegistry originalRegistry = ComponentRegistry.getInstance();
+    class TestRegistry extends ComponentRegistry {
+      TestRegistry() {
+        super();
+      }
+    }
+    ComponentRegistry testRegistry = new TestRegistry();
+    Example example =
+        Example.builder()
+            .input(Content.fromParts(Part.fromText("qin")))
+            .output(ImmutableList.of(Content.fromParts(Part.fromText("qout"))))
+            .build();
+    testRegistry.register(
+        "multi_agent_llm_config.example_tool", ExampleTool.builder().addExample(example).build());
+    ComponentRegistry.setInstance(testRegistry);
+    File configFile = tempFolder.newFile("with_examples.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        name: examples_agent
+        description: Agent with examples configured via tool
+        instruction: You are a test agent
+        agent_class: LlmAgent
+        model: gemini-2.0-flash
+        tools:
+          - name: multi_agent_llm_config.example_tool
+        """);
+    String configPath = configFile.getAbsolutePath();
+
+    BaseAgent agent;
+    try {
+      agent = ConfigAgentUtils.fromConfig(configPath);
+    } finally {
+      ComponentRegistry.setInstance(originalRegistry);
+    }
+
+    assertThat(agent).isInstanceOf(LlmAgent.class);
+    LlmAgent llmAgent = (LlmAgent) agent;
+
+    // Process tools to verify ExampleTool appends the examples to the request
+    LlmRequest.Builder requestBuilder = LlmRequest.builder().model("gemini-2.0-flash");
+    InvocationContext context = TestUtils.createInvocationContext(agent);
+    llmAgent
+        .canonicalTools(new ReadonlyContext(context))
+        .concatMapCompletable(
+            tool -> tool.processLlmRequest(requestBuilder, ToolContext.builder(context).build()))
+        .blockingAwait();
+    LlmRequest updated = requestBuilder.build();
+    // Verify ExampleTool appended a system instruction with examples
+    assertThat(updated.getSystemInstructions()).isNotEmpty();
   }
 }

@@ -347,6 +347,44 @@ public final class ConfigAgentUtilsTest {
             () -> ConfigAgentUtils.fromConfig(mainAgentFile.getAbsolutePath()));
 
     assertThat(exception).hasMessageThat().contains("Failed to create agent from config");
+    // Ensure we don't throw a NullPointerException due to bad null/trim handling
+    StringBuilder messages = new StringBuilder();
+    Throwable t = exception.getCause();
+    while (t != null) {
+      messages.append(t.getMessage()).append("\n");
+      t = t.getCause();
+    }
+    assertThat(messages.toString()).contains("must specify either 'configPath' or 'code'");
+  }
+
+  @Test
+  public void resolveSubAgents_withWhitespaceCode_treatedAsMissing_throwsConfigurationException()
+      throws IOException {
+    File mainAgentFile = tempFolder.newFile("whitespace_code_subagent.yaml");
+    Files.writeString(
+        mainAgentFile.toPath(),
+        """
+        agent_class: LlmAgent
+        name: main_agent
+        description: Main agent
+        instruction: You are a main agent
+        sub_agents:
+          - name: ws_code
+            code: "   "
+        """);
+
+    ConfigurationException exception =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(mainAgentFile.getAbsolutePath()));
+
+    StringBuilder messages = new StringBuilder();
+    Throwable t = exception.getCause();
+    while (t != null) {
+      messages.append(t.getMessage()).append("\n");
+      t = t.getCause();
+    }
+    assertThat(messages.toString()).contains("must specify either 'configPath' or 'code'");
   }
 
   @Test
@@ -920,5 +958,195 @@ public final class ConfigAgentUtilsTest {
     LlmRequest updated = requestBuilder.build();
     // Verify ExampleTool appended a system instruction with examples
     assertThat(updated.getSystemInstructions()).isNotEmpty();
+  }
+
+  @Test
+  public void resolveSubAgents_withCode_resolvesSuccessfully()
+      throws IOException, ConfigurationException {
+    // Create a test agent
+    LlmAgent testAgent =
+        LlmAgent.builder()
+            .name("test_agent")
+            .description("Test agent for code resolution")
+            .instruction("Test instruction")
+            .build();
+
+    // Register test agent in the ComponentRegistry using Python ADK style key
+    ComponentRegistry.getInstance().register("sub_agents_config.test_agent.agent", testAgent);
+
+    File mainAgentFile = tempFolder.newFile("main_agent.yaml");
+    Files.writeString(
+        mainAgentFile.toPath(),
+        """
+        agent_class: LlmAgent
+        name: main_agent
+        description: Main agent with code subagent
+        instruction: You are a main agent
+        sub_agents:
+          - code: sub_agents_config.test_agent.agent
+        """);
+
+    BaseAgent mainAgent = ConfigAgentUtils.fromConfig(mainAgentFile.getAbsolutePath());
+
+    assertThat(mainAgent).isNotNull();
+    assertThat(mainAgent.subAgents()).hasSize(1);
+    BaseAgent subAgent = mainAgent.subAgents().get(0);
+    assertThat(subAgent).isInstanceOf(LlmAgent.class);
+    assertThat(subAgent.name()).isEqualTo("test_agent");
+    assertThat(subAgent.description()).isEqualTo("Test agent for code resolution");
+  }
+
+  @Test
+  public void resolveSubAgents_withLifeAgentUsingCode_resolvesSuccessfully()
+      throws IOException, ConfigurationException {
+    // Create a LifeAgent similar to the Python ADK example
+    LlmAgent lifeAgent =
+        LlmAgent.builder()
+            .name("life_agent")
+            .description("Life agent")
+            .instruction(
+                "You are a life agent. You are responsible for answering questions about life.")
+            .build();
+
+    // Register the LifeAgent in the ComponentRegistry using Python ADK style key
+    ComponentRegistry.getInstance().register("sub_agents_config.life_agent.agent", lifeAgent);
+
+    File mainAgentFile = tempFolder.newFile("root_agent.yaml");
+    Files.writeString(
+        mainAgentFile.toPath(),
+        """
+        name: root_agent
+        model: gemini-2.0-flash
+        description: Root agent
+        instruction: |
+          If the user query is about life, you should route it to the life sub-agent.
+          If the user query is about work, you should route it to the work sub-agent.
+          If the user query is about anything else, you should answer it yourself.
+        sub_agents:
+          - code: sub_agents_config.life_agent.agent
+        """);
+
+    BaseAgent rootAgent = ConfigAgentUtils.fromConfig(mainAgentFile.getAbsolutePath());
+
+    assertThat(rootAgent).isNotNull();
+    assertThat(rootAgent.name()).isEqualTo("root_agent");
+    assertThat(rootAgent.description()).isEqualTo("Root agent");
+    assertThat(rootAgent).isInstanceOf(LlmAgent.class);
+
+    // Verify the life agent is properly loaded as a subagent
+    assertThat(rootAgent.subAgents()).hasSize(1);
+    BaseAgent subAgent = rootAgent.subAgents().get(0);
+    assertThat(subAgent).isInstanceOf(LlmAgent.class);
+    assertThat(subAgent.name()).isEqualTo("life_agent");
+    assertThat(subAgent.description()).isEqualTo("Life agent");
+
+    LlmAgent llmSubAgent = (LlmAgent) subAgent;
+    assertThat(llmSubAgent.instruction().toString())
+        .contains("You are a life agent. You are responsible for answering questions about life.");
+  }
+
+  @Test
+  public void fromConfig_agentClassWithGooglePrefix_resolvesToLlmAgent()
+      throws IOException, ConfigurationException {
+    File configFile = tempFolder.newFile("google_prefix_agent.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        name: prefixed_agent
+        description: Agent declared with Python-style qualified class
+        instruction: test instruction
+        agent_class: google.adk.agents.LlmAgent
+        """);
+
+    BaseAgent agent = ConfigAgentUtils.fromConfig(configFile.getAbsolutePath());
+
+    assertThat(agent).isNotNull();
+    assertThat(agent).isInstanceOf(LlmAgent.class);
+    assertThat(agent.name()).isEqualTo("prefixed_agent");
+  }
+
+  @Test
+  public void resolveSubAgents_withInvalidCodeKey_throwsConfigurationException()
+      throws IOException {
+    File mainAgentFile = tempFolder.newFile("invalid_code_subagent.yaml");
+    Files.writeString(
+        mainAgentFile.toPath(),
+        """
+        name: root_agent
+        description: Root agent
+        instruction: test instruction
+        sub_agents:
+          - code: non.existent.registry.key
+        """);
+
+    ConfigurationException exception =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(mainAgentFile.getAbsolutePath()));
+
+    assertThat(exception).hasMessageThat().contains("Failed to create agent from config");
+    // Unwrap nested causes (InvocationTargetException -> ConfigurationException -> ...)
+    StringBuilder messages = new StringBuilder();
+    Throwable t = exception.getCause();
+    while (t != null) {
+      messages.append(t.getMessage()).append("\n");
+      t = t.getCause();
+    }
+    assertThat(messages.toString()).contains("Failed to resolve subagent");
+    assertThat(messages.toString()).contains("code key: non.existent.registry.key");
+  }
+
+  @Test
+  public void resolveSubAgents_withNullName_handlesGracefully() throws IOException {
+    // This test catches the mutation where null check for subAgentConfig.name() is broken
+    // Testing both scenarios: missing 'code' field and invalid 'code' field
+
+    File mainAgentFile = tempFolder.newFile("main_agent_null_name.yaml");
+    Files.writeString(
+        mainAgentFile.toPath(),
+        """
+        agent_class: LlmAgent
+        name: main_agent
+        description: Main agent with unnamed subagent
+        instruction: You are a main agent
+        sub_agents:
+          - name:
+        """);
+
+    ConfigurationException exception1 =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(mainAgentFile.getAbsolutePath()));
+
+    Throwable cause1 = exception1;
+    while (cause1.getCause() != null) {
+      cause1 = cause1.getCause();
+    }
+    assertThat(cause1).hasMessageThat().doesNotContain("'null'");
+    assertThat(cause1).hasMessageThat().contains("must specify either 'configPath' or 'code'");
+
+    File mainAgentFile2 = tempFolder.newFile("main_agent_invalid_code.yaml");
+    Files.writeString(
+        mainAgentFile2.toPath(),
+        """
+        agent_class: LlmAgent
+        name: main_agent
+        description: Main agent with unnamed subagent
+        instruction: You are a main agent
+        sub_agents:
+          - code: nonexistent.agent
+        """);
+
+    ConfigurationException exception2 =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(mainAgentFile2.getAbsolutePath()));
+
+    Throwable cause2 = exception2;
+    while (cause2.getCause() != null) {
+      cause2 = cause2.getCause();
+    }
+    assertThat(cause2).hasMessageThat().doesNotContain("'null'");
+    assertThat(cause2).hasMessageThat().contains("from registry with code key: nonexistent.agent");
   }
 }

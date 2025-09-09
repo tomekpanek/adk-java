@@ -20,6 +20,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 import com.google.adk.agents.BaseAgent;
+import com.google.adk.agents.Callbacks;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.agents.LoopAgent;
 import com.google.adk.agents.ParallelAgent;
@@ -153,7 +154,7 @@ public class ComponentRegistry {
    * @throws IllegalArgumentException if name is null or empty, or if value is null
    */
   public void register(String name, Object value) {
-    if (name == null || name.trim().isEmpty()) {
+    if (isNullOrEmpty(name) || name.trim().isEmpty()) {
       throw new IllegalArgumentException("Name cannot be null or empty");
     }
     if (value == null) {
@@ -460,5 +461,37 @@ public class ComponentRegistry {
     return registry.keySet().stream()
         .filter(name -> name.startsWith(prefix))
         .collect(toImmutableSet());
+  }
+
+  public static Optional<Callbacks.BeforeAgentCallback> resolveBeforeAgentCallback(String name) {
+    return resolveCallback(name, Callbacks.BeforeAgentCallback.class);
+  }
+
+  public static Optional<Callbacks.AfterAgentCallback> resolveAfterAgentCallback(String name) {
+    return resolveCallback(name, Callbacks.AfterAgentCallback.class);
+  }
+
+  public static Optional<Callbacks.BeforeModelCallback> resolveBeforeModelCallback(String name) {
+    return resolveCallback(name, Callbacks.BeforeModelCallback.class);
+  }
+
+  public static Optional<Callbacks.AfterModelCallback> resolveAfterModelCallback(String name) {
+    return resolveCallback(name, Callbacks.AfterModelCallback.class);
+  }
+
+  public static Optional<Callbacks.BeforeToolCallback> resolveBeforeToolCallback(String name) {
+    return resolveCallback(name, Callbacks.BeforeToolCallback.class);
+  }
+
+  public static Optional<Callbacks.AfterToolCallback> resolveAfterToolCallback(String name) {
+    return resolveCallback(name, Callbacks.AfterToolCallback.class);
+  }
+
+  private static <T> Optional<T> resolveCallback(String name, Class<T> type) {
+    if (isNullOrEmpty(name)) {
+      return Optional.empty();
+    }
+    ComponentRegistry registry = getInstance();
+    return registry.get(name, type);
   }
 }

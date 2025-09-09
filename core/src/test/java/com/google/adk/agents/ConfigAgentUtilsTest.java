@@ -23,6 +23,7 @@ import com.google.adk.agents.ConfigAgentUtils.ConfigurationException;
 import com.google.adk.examples.Example;
 import com.google.adk.models.LlmRequest;
 import com.google.adk.testing.TestUtils;
+import com.google.adk.tools.BaseTool;
 import com.google.adk.tools.ExampleTool;
 import com.google.adk.tools.ToolContext;
 import com.google.adk.tools.mcp.McpToolset;
@@ -31,9 +32,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.Part;
+import io.reactivex.rxjava3.core.Maybe;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1148,5 +1152,233 @@ public final class ConfigAgentUtilsTest {
     }
     assertThat(cause2).hasMessageThat().doesNotContain("'null'");
     assertThat(cause2).hasMessageThat().contains("from registry with code key: nonexistent.agent");
+  }
+
+  @Test
+  public void fromConfig_withConfiguredCallbacks_resolvesCallbacks()
+      throws IOException, ConfigurationException {
+    ComponentRegistry registry = ComponentRegistry.getInstance();
+
+    String pfx = "test.callbacks.";
+    registry.register(
+        pfx + "before_agent_1", (Callbacks.BeforeAgentCallback) (ctx) -> Maybe.empty());
+    registry.register(
+        pfx + "before_agent_2", (Callbacks.BeforeAgentCallback) (ctx) -> Maybe.empty());
+    registry.register(pfx + "after_agent_1", (Callbacks.AfterAgentCallback) (ctx) -> Maybe.empty());
+    registry.register(
+        pfx + "before_model_1", (Callbacks.BeforeModelCallback) (ctx, req) -> Maybe.empty());
+    registry.register(
+        pfx + "after_model_1", (Callbacks.AfterModelCallback) (ctx, resp) -> Maybe.empty());
+    registry.register(
+        pfx + "before_tool_1",
+        (Callbacks.BeforeToolCallback) (inv, tool, args, toolCtx) -> Maybe.empty());
+    registry.register(
+        pfx + "after_tool_1",
+        (Callbacks.AfterToolCallback) (inv, tool, args, toolCtx, resp) -> Maybe.empty());
+
+    File configFile = tempFolder.newFile("with_callbacks.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        name: callback_agent
+        description: Agent with configured callbacks
+        instruction: test instruction
+        agent_class: LlmAgent
+        before_agent_callbacks:
+          - name: test.callbacks.before_agent_1
+          - name: test.callbacks.before_agent_2
+        after_agent_callbacks:
+          - name: test.callbacks.after_agent_1
+        before_model_callbacks:
+          - name: test.callbacks.before_model_1
+        after_model_callbacks:
+          - name: test.callbacks.after_model_1
+        before_tool_callbacks:
+          - name: test.callbacks.before_tool_1
+        after_tool_callbacks:
+          - name: test.callbacks.after_tool_1
+        """);
+
+    BaseAgent agent = ConfigAgentUtils.fromConfig(configFile.getAbsolutePath());
+
+    assertThat(agent).isInstanceOf(LlmAgent.class);
+    LlmAgent llm = (LlmAgent) agent;
+
+    assertThat(agent.beforeAgentCallback()).isPresent();
+    assertThat(agent.beforeAgentCallback().get()).hasSize(2);
+    assertThat(agent.afterAgentCallback()).isPresent();
+    assertThat(agent.afterAgentCallback().get()).hasSize(1);
+
+    assertThat(llm.beforeModelCallback()).isPresent();
+    assertThat(llm.beforeModelCallback().get()).hasSize(1);
+    assertThat(llm.afterModelCallback()).isPresent();
+    assertThat(llm.afterModelCallback().get()).hasSize(1);
+
+    assertThat(llm.beforeToolCallback()).isPresent();
+    assertThat(llm.beforeToolCallback().get()).hasSize(1);
+    assertThat(llm.afterToolCallback()).isPresent();
+    assertThat(llm.afterToolCallback().get()).hasSize(1);
+  }
+
+  @Test
+  public void fromConfig_withInvalidBeforeAgentCallback_throwsConfigurationException()
+      throws IOException {
+    File configFile = tempFolder.newFile("invalid_before_agent_callback.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        name: invalid_callback_agent
+        description: Agent with invalid before_agent_callback
+        instruction: test instruction
+        agent_class: LlmAgent
+        before_agent_callbacks:
+          - name: non.existent.callback
+        """);
+
+    ConfigurationException exception =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(configFile.getAbsolutePath()));
+
+    assertThat(exception).hasMessageThat().contains("Failed to create agent from config");
+    assertThat(exception.getCause())
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo("Invalid before_agent_callback: non.existent.callback");
+  }
+
+  @Test
+  public void fromConfig_withInvalidAfterAgentCallback_throwsConfigurationException()
+      throws IOException {
+    File configFile = tempFolder.newFile("invalid_after_agent_callback.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        name: invalid_callback_agent
+        description: Agent with invalid after_agent_callback
+        instruction: test instruction
+        agent_class: LlmAgent
+        after_agent_callbacks:
+          - name: non.existent.after.callback
+        """);
+
+    ConfigurationException exception =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(configFile.getAbsolutePath()));
+
+    assertThat(exception).hasMessageThat().contains("Failed to create agent from config");
+    assertThat(exception.getCause())
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo("Invalid after_agent_callback: non.existent.after.callback");
+  }
+
+  @Test
+  public void fromConfig_withInvalidBeforeModelCallback_throwsConfigurationException()
+      throws IOException {
+    File configFile = tempFolder.newFile("invalid_before_model_callback.yaml");
+    Files.writeString(
+        configFile.toPath(),
+        """
+        name: invalid_callback_agent
+        description: Agent with invalid before_model_callback
+        instruction: test instruction
+        agent_class: LlmAgent
+        before_model_callbacks:
+          - name: non.existent.model.callback
+        """);
+
+    ConfigurationException exception =
+        assertThrows(
+            ConfigurationException.class,
+            () -> ConfigAgentUtils.fromConfig(configFile.getAbsolutePath()));
+
+    assertThat(exception).hasMessageThat().contains("Failed to create agent from config");
+    assertThat(exception.getCause().getCause())
+        .hasMessageThat()
+        .isEqualTo("Invalid before_model_callback: non.existent.model.callback");
+  }
+
+  @Test
+  public void testLlmAgentConfigAccessors() {
+    LlmAgentConfig config = new LlmAgentConfig();
+
+    assertThat(config.agentClass()).isEqualTo("LlmAgent");
+
+    config.setModel("test-model");
+    assertThat(config.model()).isEqualTo("test-model");
+
+    config.setInstruction("test instruction");
+    assertThat(config.instruction()).isEqualTo("test instruction");
+
+    config.setDisallowTransferToParent(true);
+    assertThat(config.disallowTransferToParent()).isTrue();
+
+    config.setDisallowTransferToPeers(false);
+    assertThat(config.disallowTransferToPeers()).isFalse();
+
+    config.setOutputKey("test-output-key");
+    assertThat(config.outputKey()).isEqualTo("test-output-key");
+
+    config.setIncludeContents(LlmAgent.IncludeContents.NONE);
+    assertThat(config.includeContents()).isEqualTo(LlmAgent.IncludeContents.NONE);
+
+    GenerateContentConfig contentConfig = GenerateContentConfig.builder().temperature(0.8f).build();
+    config.setGenerateContentConfig(contentConfig);
+    assertThat(config.generateContentConfig()).isEqualTo(contentConfig);
+
+    List<LlmAgentConfig.CallbackRef> beforeAgentCallbacks = new ArrayList<>();
+    beforeAgentCallbacks.add(new LlmAgentConfig.CallbackRef("callback1"));
+    config.setBeforeAgentCallbacks(beforeAgentCallbacks);
+    assertThat(config.beforeAgentCallbacks()).hasSize(1);
+    assertThat(config.beforeAgentCallbacks().get(0).name()).isEqualTo("callback1");
+
+    List<LlmAgentConfig.CallbackRef> afterAgentCallbacks = new ArrayList<>();
+    afterAgentCallbacks.add(new LlmAgentConfig.CallbackRef("callback2"));
+    config.setAfterAgentCallbacks(afterAgentCallbacks);
+    assertThat(config.afterAgentCallbacks()).hasSize(1);
+    assertThat(config.afterAgentCallbacks().get(0).name()).isEqualTo("callback2");
+
+    List<LlmAgentConfig.CallbackRef> beforeModelCallbacks = new ArrayList<>();
+    beforeModelCallbacks.add(new LlmAgentConfig.CallbackRef("callback3"));
+    config.setBeforeModelCallbacks(beforeModelCallbacks);
+    assertThat(config.beforeModelCallbacks()).hasSize(1);
+    assertThat(config.beforeModelCallbacks().get(0).name()).isEqualTo("callback3");
+
+    List<LlmAgentConfig.CallbackRef> afterModelCallbacks = new ArrayList<>();
+    afterModelCallbacks.add(new LlmAgentConfig.CallbackRef("callback4"));
+    config.setAfterModelCallbacks(afterModelCallbacks);
+    assertThat(config.afterModelCallbacks()).hasSize(1);
+    assertThat(config.afterModelCallbacks().get(0).name()).isEqualTo("callback4");
+
+    List<LlmAgentConfig.CallbackRef> beforeToolCallbacks = new ArrayList<>();
+    beforeToolCallbacks.add(new LlmAgentConfig.CallbackRef("callback5"));
+    config.setBeforeToolCallbacks(beforeToolCallbacks);
+    assertThat(config.beforeToolCallbacks()).hasSize(1);
+    assertThat(config.beforeToolCallbacks().get(0).name()).isEqualTo("callback5");
+
+    List<LlmAgentConfig.CallbackRef> afterToolCallbacks = new ArrayList<>();
+    afterToolCallbacks.add(new LlmAgentConfig.CallbackRef("callback6"));
+    config.setAfterToolCallbacks(afterToolCallbacks);
+    assertThat(config.afterToolCallbacks()).hasSize(1);
+    assertThat(config.afterToolCallbacks().get(0).name()).isEqualTo("callback6");
+
+    List<BaseTool.ToolConfig> tools = new ArrayList<>();
+    BaseTool.ToolConfig toolConfig = new BaseTool.ToolConfig();
+    toolConfig.setName("test-tool");
+    tools.add(toolConfig);
+    config.setTools(tools);
+    assertThat(config.tools()).hasSize(1);
+    assertThat(config.tools().get(0).name()).isEqualTo("test-tool");
+  }
+
+  @Test
+  public void testCallbackRefAccessors() {
+    LlmAgentConfig.CallbackRef callbackRef = new LlmAgentConfig.CallbackRef("initial-name");
+    assertThat(callbackRef.name()).isEqualTo("initial-name");
+
+    callbackRef.setName("updated-name");
+    assertThat(callbackRef.name()).isEqualTo("updated-name");
   }
 }

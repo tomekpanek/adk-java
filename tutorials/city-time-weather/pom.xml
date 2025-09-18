@@ -25,6 +25,7 @@
   </parent>
 
   <artifactId>google-adk-tutorials-city-time-weather</artifactId>
+  <name>Agent Development Kit - Tutorial: City Time Weather</name>
 
   <properties>
     <exec.mainClass>com.google.adk.tutorials.CityTimeWeather</exec.mainClass>

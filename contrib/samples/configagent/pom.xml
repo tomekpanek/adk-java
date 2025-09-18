@@ -4,14 +4,14 @@
 
     <groupId>com.google.adk.samples</groupId>
     <artifactId>configagent-samples</artifactId>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.3.0</version>
     <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <google-adk.version>0.2.1-SNAPSHOT</google-adk.version>
+        <google-adk.version>0.3.0</google-adk.version>
     </properties>
 
     <dependencies>

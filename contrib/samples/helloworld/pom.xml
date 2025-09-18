@@ -19,7 +19,7 @@
 
     <groupId>com.google.adk.samples</groupId>
     <artifactId>google-adk-sample-helloworld</artifactId>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.3.0</version>
     <name>Google ADK - Sample - Hello World</name>
     <description>
         A sample "Hello World" application demonstrating basic agent and tool usage with the Google ADK,
@@ -33,7 +33,7 @@
         <auto-value.version>1.11.0</auto-value.version>
         <!-- Main class for exec-maven-plugin -->
         <exec.mainClass>internal.samples.helloworld.HelloWorldRun</exec.mainClass>
-        <google-adk.version>0.2.1-SNAPSHOT</google-adk.version>
+        <google-adk.version>0.3.0</google-adk.version>
     </properties>
 
     <dependencies>

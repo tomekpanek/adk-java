@@ -99,7 +99,7 @@ public class ExecutionController {
    */
   @PostMapping(value = "/run_sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter agentRunSse(@RequestBody AgentRunRequest request) {
-    SseEmitter emitter = new SseEmitter();
+    SseEmitter emitter = new SseEmitter(60 * 60 * 1000L); // 1 hour timeout
 
     if (request.appName == null || request.appName.trim().isEmpty()) {
       log.warn(

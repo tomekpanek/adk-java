@@ -92,5 +92,6 @@ Once started, the dev UI is available at `http://localhost:8000` (or the specifi
 ## Development Conventions
 
 *   **Coding Style**: The project follows the Google Java Style Guide. The `fmt-maven-plugin` is used to format the code automatically.
+    *   **Import Style**: Always use import statements instead of fully qualified class names in code. Prefer `import com.google.adk.agents.InvocationContext;` over using `com.google.adk.agents.InvocationContext` directly in the code.
 *   **Testing**: The project uses JUnit 5 for testing. Tests are located in the `src/test/java` directory of each module.
 *   **Contributing**: Contributions are welcome. Please see the `CONTRIBUTING.md` file for more information.

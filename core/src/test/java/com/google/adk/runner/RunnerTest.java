@@ -28,6 +28,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.adk.agents.InvocationContext;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.agents.RunConfig;
 import com.google.adk.events.Event;
@@ -450,7 +451,7 @@ public final class RunnerTest {
   }
 
   @Test
-  public void runAsync_withStateDelta_appendsStateEventToHistory() {
+  public void runAsync_withStateDelta_attachesStateToUserMessageEvent() {
     var unused =
         runner
             .runAsync(
@@ -468,15 +469,39 @@ public final class RunnerTest {
             .getSession("test", "user", session.id(), Optional.empty())
             .blockingGet();
 
-    assertThat(
-            finalSession.events().stream()
-                .anyMatch(
-                    e ->
-                        e.author().equals("user")
-                            && e.actions() != null
-                            && e.actions().stateDelta() != null
-                            && !e.actions().stateDelta().isEmpty()))
-        .isTrue();
+    // Verify state delta is attached to the user message event, not a separate event
+    Event userEvent =
+        finalSession.events().stream()
+            .filter(
+                e ->
+                    e.author().equals("user")
+                        && e.content().isPresent()
+                        && e.content().get().parts().get().get(0).text().isPresent()
+                        && e.content()
+                            .get()
+                            .parts()
+                            .get()
+                            .get(0)
+                            .text()
+                            .get()
+                            .equals("test message"))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(userEvent.actions()).isNotNull();
+    assertThat(userEvent.actions().stateDelta()).containsEntry("testKey", "testValue");
+
+    // Verify there is no separate state-only event
+    long stateOnlyEvents =
+        finalSession.events().stream()
+            .filter(
+                e ->
+                    e.author().equals("user")
+                        && e.content().isEmpty()
+                        && e.actions() != null
+                        && !e.actions().stateDelta().isEmpty())
+            .count();
+    assertThat(stateOnlyEvents).isEqualTo(0);
   }
 
   @Test
@@ -508,6 +533,74 @@ public final class RunnerTest {
             .blockingGet();
     assertThat(finalSession.state()).containsEntry("existing_key", "existing_value");
     assertThat(finalSession.state()).containsEntry("new_key", "new_value");
+  }
+
+  @Test
+  public void beforeRunCallback_seesUserMessageInSession() {
+    ArgumentCaptor<InvocationContext> contextCaptor =
+        ArgumentCaptor.forClass(InvocationContext.class);
+    when(plugin.beforeRunCallback(contextCaptor.capture())).thenReturn(Maybe.empty());
+
+    var unused =
+        runner
+            .runAsync("user", session.id(), createContent("user message for callback"))
+            .toList()
+            .blockingGet();
+
+    // Verify beforeRunCallback was called
+    verify(plugin).beforeRunCallback(any());
+
+    // Verify the context passed to beforeRunCallback contains the session with user message
+    InvocationContext capturedContext = contextCaptor.getValue();
+    Session sessionInCallback = capturedContext.session();
+
+    // Check that the user message is in the session history
+    boolean userMessageFound =
+        sessionInCallback.events().stream()
+            .anyMatch(
+                e ->
+                    e.author().equals("user")
+                        && e.content().isPresent()
+                        && e.content().get().parts().get().get(0).text().isPresent()
+                        && e.content()
+                            .get()
+                            .parts()
+                            .get()
+                            .get(0)
+                            .text()
+                            .get()
+                            .contains("user message for callback"));
+
+    assertThat(userMessageFound).isTrue();
+  }
+
+  @Test
+  public void beforeRunCallback_withStateDelta_seesMergedState() {
+    ArgumentCaptor<InvocationContext> contextCaptor =
+        ArgumentCaptor.forClass(InvocationContext.class);
+    when(plugin.beforeRunCallback(contextCaptor.capture())).thenReturn(Maybe.empty());
+
+    ImmutableMap<String, Object> stateDelta =
+        ImmutableMap.of("callback_key", "callback_value", "number", 123);
+
+    var unused =
+        runner
+            .runAsync(
+                "user",
+                session.id(),
+                createContent("test with state"),
+                RunConfig.builder().build(),
+                stateDelta)
+            .toList()
+            .blockingGet();
+
+    // Verify the context passed to beforeRunCallback has the merged state
+    InvocationContext capturedContext = contextCaptor.getValue();
+    Session sessionInCallback = capturedContext.session();
+
+    // Verify state delta was merged before beforeRunCallback was invoked
+    assertThat(sessionInCallback.state()).containsEntry("callback_key", "callback_value");
+    assertThat(sessionInCallback.state()).containsEntry("number", 123);
   }
 
   private Content createContent(String text) {

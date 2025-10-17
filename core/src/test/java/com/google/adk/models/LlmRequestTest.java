@@ -104,7 +104,7 @@ public final class LlmRequestTest {
     String initialInstructionText = "Be polite.";
     Content initialSystemInstruction =
         Content.builder()
-            .role("user")
+            .role("system")
             .parts(ImmutableList.of(Part.builder().text(initialInstructionText).build()))
             .build();
     GenerateContentConfig initialConfig =
@@ -119,8 +119,10 @@ public final class LlmRequestTest {
 
     assertThat(request.config()).isPresent();
     Content systemInstruction = request.config().get().systemInstruction().get();
-    assertThat(systemInstruction.role()).hasValue("user");
-    assertThat(systemInstruction.text()).isEqualTo("Be polite.\n\nBe concise.");
+    assertThat(systemInstruction.role()).hasValue("system");
+    assertThat(systemInstruction.parts().get()).hasSize(2);
+    assertThat(systemInstruction.parts().get().get(0).text()).hasValue(initialInstructionText);
+    assertThat(systemInstruction.parts().get().get(1).text()).hasValue(newInstructionText);
 
     assertThat(request.liveConnectConfig().systemInstruction()).isPresent();
     Content liveSystemInstruction = request.liveConnectConfig().systemInstruction().get();
@@ -194,7 +196,16 @@ public final class LlmRequestTest {
 
     assertThat(request.config()).isPresent();
     Content systemInstruction = request.config().get().systemInstruction().get();
-    assertThat(systemInstruction.text()).isEqualTo(instruction1 + "\n\n" + instruction2);
+    assertThat(systemInstruction.parts().get()).hasSize(2);
+    assertThat(systemInstruction.parts().get().get(0).text()).hasValue(instruction1);
+    assertThat(systemInstruction.parts().get().get(1).text()).hasValue(instruction2);
+
+    assertThat(request.liveConnectConfig().systemInstruction()).isPresent();
+    Content liveSystemInstruction = request.liveConnectConfig().systemInstruction().get();
+    assertThat(liveSystemInstruction.role()).hasValue("user");
+    assertThat(liveSystemInstruction.parts().get()).hasSize(2);
+    assertThat(liveSystemInstruction.parts().get().get(0).text()).hasValue(instruction1);
+    assertThat(liveSystemInstruction.parts().get().get(1).text()).hasValue(instruction2);
   }
 
   @Test
@@ -295,6 +306,7 @@ public final class LlmRequestTest {
             .appendInstructions(ImmutableList.of(instruction1, instruction2))
             .build();
     assertThat(request.getSystemInstructions())
-        .containsExactly(instruction1 + "\n\n" + instruction2);
+        .containsExactly(instruction1, instruction2)
+        .inOrder();
   }
 }

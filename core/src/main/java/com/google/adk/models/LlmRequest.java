@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.adk.JsonBaseModel;
 import com.google.adk.tools.BaseTool;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -154,30 +153,32 @@ public abstract class LlmRequest extends JsonBaseModel {
 
     abstract Map<String, BaseTool> tools();
 
-    /** Appends instructions with {@code "\n\n"} as separator. */
-    private void appendSystemInstructions(List<String> instructions) {
-      var config = config().orElse(GenerateContentConfig.builder().build());
-      var existingInstruction =
-          config.systemInstruction().map(content -> Strings.nullToEmpty(content.text())).orElse("");
-      var newInstructionBuilder = ImmutableList.<String>builder();
-      if (!existingInstruction.isEmpty()) {
-        newInstructionBuilder.add(existingInstruction);
-      }
-      newInstructionBuilder.addAll(instructions);
-      var newInstruction = String.join("\n\n", newInstructionBuilder.build());
-      config(
-          config.toBuilder()
-              .systemInstruction(
-                  Content.builder().role("user").parts(Part.fromText(newInstruction)))
-              .build());
-    }
-
     @CanIgnoreReturnValue
     public final Builder appendInstructions(List<String> instructions) {
       if (instructions.isEmpty()) {
         return this;
       }
-      appendSystemInstructions(instructions);
+      GenerateContentConfig config = config().orElse(GenerateContentConfig.builder().build());
+      ImmutableList.Builder<Part> parts = ImmutableList.builder();
+      if (config.systemInstruction().isPresent()) {
+        parts.addAll(config.systemInstruction().get().parts().orElse(ImmutableList.of()));
+      }
+      parts.addAll(
+          instructions.stream()
+              .map(instruction -> Part.builder().text(instruction).build())
+              .collect(toImmutableList()));
+      config(
+          config.toBuilder()
+              .systemInstruction(
+                  Content.builder()
+                      .parts(parts.build())
+                      .role(
+                          config
+                              .systemInstruction()
+                              .map(c -> c.role().orElse("user"))
+                              .orElse("user"))
+                      .build())
+              .build());
 
       LiveConnectConfig liveConfig = liveConnectConfig();
       ImmutableList.Builder<Part> livePartsBuilder = ImmutableList.builder();

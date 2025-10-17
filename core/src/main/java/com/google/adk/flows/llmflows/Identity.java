@@ -16,10 +16,8 @@
 
 package com.google.adk.flows.llmflows;
 
-import com.google.adk.agents.BaseAgent;
 import com.google.adk.agents.InvocationContext;
 import com.google.adk.models.LlmRequest;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import io.reactivex.rxjava3.core.Single;
 
@@ -31,18 +29,13 @@ public final class Identity implements RequestProcessor {
   @Override
   public Single<RequestProcessor.RequestProcessingResult> processRequest(
       InvocationContext context, LlmRequest request) {
-    BaseAgent agent = context.agent();
-    StringBuilder builder =
-        new StringBuilder()
-            .append("You are an agent. Your internal name is ")
-            .append(agent.name())
-            .append(".");
-    if (!Strings.isNullOrEmpty(agent.description())) {
-      builder.append(" The description about you is ").append(agent.description());
-    }
+    var agent = context.agent();
+    var instructions =
+        ImmutableList.of(
+            String.format("You are an agent. Your internal name is \"%s\".", agent.name()),
+            String.format(" The description about you is \"%s\"", agent.description()));
     return Single.just(
         RequestProcessor.RequestProcessingResult.create(
-            request.toBuilder().appendInstructions(ImmutableList.of(builder.toString())).build(),
-            ImmutableList.of()));
+            request.toBuilder().appendInstructions(instructions).build(), ImmutableList.of()));
   }
 }

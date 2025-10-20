@@ -201,11 +201,17 @@ public class FunctionTool extends BaseTool {
         arguments[i] = null;
         continue;
       }
+      Annotations.Schema schema = parameters[i].getAnnotation(Annotations.Schema.class);
       if (!args.containsKey(paramName)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "The parameter '%s' was not found in the arguments provided by the model.",
-                paramName));
+        if (schema != null && schema.optional()) {
+          arguments[i] = null;
+          continue;
+        } else {
+          throw new IllegalArgumentException(
+              String.format(
+                  "The parameter '%s' was not found in the arguments provided by the model.",
+                  paramName));
+        }
       }
       Class<?> paramType = parameters[i].getType();
       Object argValue = args.get(paramName);
@@ -278,11 +284,17 @@ public class FunctionTool extends BaseTool {
         }
         continue;
       }
+      Annotations.Schema schema = parameters[i].getAnnotation(Annotations.Schema.class);
       if (!args.containsKey(paramName)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "The parameter '%s' was not found in the arguments provided by the model.",
-                paramName));
+        if (schema != null && schema.optional()) {
+          arguments[i] = null;
+          continue;
+        } else {
+          throw new IllegalArgumentException(
+              String.format(
+                  "The parameter '%s' was not found in the arguments provided by the model.",
+                  paramName));
+        }
       }
       Class<?> paramType = parameters[i].getType();
       Object argValue = args.get(paramName);

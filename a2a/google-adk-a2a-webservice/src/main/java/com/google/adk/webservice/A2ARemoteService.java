@@ -1,7 +1,8 @@
 package com.google.adk.webservice;
 
 import com.google.adk.a2a.A2ASendMessageExecutor;
-import com.google.adk.a2a.ResponseConverter;
+import com.google.adk.a2a.converters.ResponseConverter;
+import io.a2a.spec.AgentCard;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
@@ -84,5 +85,9 @@ public class A2ARemoteService {
     String message = "Internal error processing sendMessage request";
     JSONRPCError jsonrpcError = new JSONRPCError(ERROR_CODE_INTERNAL_ERROR, message, null);
     return new SendMessageResponse(request != null ? request.getId() : null, jsonrpcError);
+  }
+
+  public AgentCard getAgentCard() {
+    return executor.getAgentCard();
   }
 }

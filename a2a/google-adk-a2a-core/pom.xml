@@ -4,11 +4,11 @@
 
   <parent>
     <groupId>com.google.adk</groupId>
-    <artifactId>google-adk-parent</artifactId>
+    <artifactId>google-adk-a2a</artifactId>
     <version>0.3.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>google-adk-a2a</artifactId>
+  <artifactId>google-adk-a2a-core</artifactId>
   <packaging>jar</packaging>
 
   <name>Google ADK A2A Integration</name>

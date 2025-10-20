@@ -2,6 +2,8 @@ package com.google.adk.a2a;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.adk.a2a.converters.EventConverter;
+import com.google.adk.a2a.converters.PartConverter;
 import com.google.adk.agents.BaseAgent;
 import com.google.adk.agents.InvocationContext;
 import com.google.adk.agents.RunConfig;

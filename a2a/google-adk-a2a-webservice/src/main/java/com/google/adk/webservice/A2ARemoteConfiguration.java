@@ -2,6 +2,7 @@ package com.google.adk.webservice;
 
 import com.google.adk.a2a.A2ASendMessageExecutor;
 import com.google.adk.agents.BaseAgent;
+import io.a2a.spec.AgentCard;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +37,13 @@ public class A2ARemoteConfiguration {
   public A2ASendMessageExecutor a2aSendMessageExecutor(
       BaseAgent agent,
       @Value("${a2a.remote.appName:" + DEFAULT_APP_NAME + "}") String appName,
-      @Value("${a2a.remote.timeoutSeconds:" + DEFAULT_TIMEOUT_SECONDS + "}") long timeoutSeconds) {
+      @Value("${a2a.remote.timeoutSeconds:" + DEFAULT_TIMEOUT_SECONDS + "}") long timeoutSeconds,
+      AgentCard agentCard) {
     logger.info(
         "Initializing A2A send message executor for appName {} with timeout {}s",
         appName,
         timeoutSeconds);
-    return new A2ASendMessageExecutor(agent, appName, Duration.ofSeconds(timeoutSeconds));
+    return new A2ASendMessageExecutor(
+        agent, appName, Duration.ofSeconds(timeoutSeconds), agentCard);
   }
 }

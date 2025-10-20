@@ -1,4 +1,4 @@
-package com.google.adk.a2a;
+package com.google.adk.a2a.converters;
 
 import com.google.adk.events.Event;
 import com.google.genai.types.Content;

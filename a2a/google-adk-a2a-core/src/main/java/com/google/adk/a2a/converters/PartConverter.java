@@ -1,4 +1,4 @@
-package com.google.adk.a2a;
+package com.google.adk.a2a.converters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -6,7 +6,7 @@
 
   <parent>
     <groupId>com.google.adk</groupId>
-    <artifactId>google-adk-parent</artifactId>
+    <artifactId>google-adk-a2a</artifactId>
     <version>0.3.1-SNAPSHOT</version>
   </parent>
 
@@ -23,7 +23,7 @@
   <dependencies>
     <dependency>
       <groupId>com.google.adk</groupId>
-      <artifactId>google-adk-a2a</artifactId>
+      <artifactId>google-adk-a2a-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -3,6 +3,9 @@ package com.google.adk.a2a;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import com.google.adk.a2a.converters.ConversationPreprocessor;
+import com.google.adk.a2a.converters.RequestConverter;
+import com.google.adk.a2a.converters.ResponseConverter;
 import com.google.adk.agents.BaseAgent;
 import com.google.adk.agents.RunConfig;
 import com.google.adk.artifacts.InMemoryArtifactService;
@@ -13,6 +16,7 @@ import com.google.adk.sessions.InMemorySessionService;
 import com.google.adk.sessions.Session;
 import com.google.common.collect.ImmutableList;
 import com.google.genai.types.Content;
+import io.a2a.spec.AgentCard;
 import io.a2a.spec.Message;
 import io.a2a.spec.TextPart;
 import io.reactivex.rxjava3.core.Completable;
@@ -49,6 +53,7 @@ public final class A2ASendMessageExecutor {
   @Nullable private final Duration agentTimeout;
   private static final RunConfig DEFAULT_RUN_CONFIG =
       RunConfig.builder().setStreamingMode(RunConfig.StreamingMode.NONE).setMaxLlmCalls(20).build();
+  private AgentCard agentCard;
 
   public A2ASendMessageExecutor(InMemorySessionService sessionService, String appName) {
     this.sessionService = sessionService;
@@ -57,7 +62,8 @@ public final class A2ASendMessageExecutor {
     this.agentTimeout = null;
   }
 
-  public A2ASendMessageExecutor(BaseAgent agent, String appName, Duration agentTimeout) {
+  public A2ASendMessageExecutor(
+      BaseAgent agent, String appName, Duration agentTimeout, AgentCard agentCard) {
     InMemorySessionService sessionService = new InMemorySessionService();
     Runner runnerInstance =
         new Runner(
@@ -70,6 +76,7 @@ public final class A2ASendMessageExecutor {
     this.appName = appName;
     this.runner = runnerInstance;
     this.agentTimeout = agentTimeout;
+    this.agentCard = agentCard;
   }
 
   public Single<Message> execute(
@@ -295,5 +302,9 @@ public final class A2ASendMessageExecutor {
       throwable = throwable.getCause();
     }
     return false;
+  }
+
+  public AgentCard getAgentCard() {
+    return agentCard;
   }
 }

@@ -383,27 +383,11 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <groupId>org.sonatype.central</groupId>
-          <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>0.8.0</version>
-          <extensions>true</extensions>
-          <configuration>
-            <publishingServerId>central</publishingServerId>
-          </configuration>
-        </plugin>
+
       </plugins>
   </pluginManagement>
     <plugins>
-      <plugin>
-        <groupId>org.sonatype.central</groupId>
-        <artifactId>central-publishing-maven-plugin</artifactId>
-        <version>0.8.0</version>
-        <extensions>true</extensions>
-        <configuration>
-          <publishingServerId>central</publishingServerId>
-        </configuration>
-      </plugin>
+
       <plugin>
         <groupId>com.spotify.fmt</groupId>
         <artifactId>fmt-maven-plugin</artifactId>
@@ -537,14 +521,15 @@
   </developers>
   <distributionManagement>
     <repository>
-      <id>central</id>
-      <name>Maven Central Repository</name>
-      <url>https://central.sonatype.com/api/v1/publisher</url>
+      <id>sabre-repo-stages</id>
+      <url>https://repository.sabre-gcp.com/repository/maven-staging/</url>
+      <layout>default</layout>
     </repository>
     <snapshotRepository>
-      <id>central</id>
-      <name>Maven Central Repository Snapshots</name>
-      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <id>gcp.repository.sabre.com-snapshots</id>
+      <url>https://repository.sabre-gcp.com/repository/maven-snapshots/</url>
+      <layout>default</layout>
+      <uniqueVersion>true</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
 </project>

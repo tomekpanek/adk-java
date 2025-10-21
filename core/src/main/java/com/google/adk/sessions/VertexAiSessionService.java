@@ -122,7 +122,6 @@ public final class VertexAiSessionService implements BaseSessionService {
         .defaultIfEmpty(ListSessionsResponse.builder().build());
   }
 
-  @SuppressWarnings("unchecked")
   private ListSessionsResponse parseListSessionsResponse(
       JsonNode listSessionsResponseMap, String appName, String userId) {
     List<Map<String, Object>> apiSessions =
@@ -142,8 +141,9 @@ public final class VertexAiSessionService implements BaseSessionService {
               .state(
                   apiSession.get("sessionState") == null
                       ? new ConcurrentHashMap<>()
-                      : new ConcurrentHashMap<>(
-                          (Map<String, Object>) apiSession.get("sessionState")))
+                      : objectMapper.convertValue(
+                          apiSession.get("sessionState"),
+                          new TypeReference<ConcurrentMap<String, Object>>() {}))
               .lastUpdateTime(updateTimestamp)
               .build();
       sessions.add(session);

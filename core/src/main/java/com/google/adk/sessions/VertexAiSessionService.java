@@ -142,8 +142,9 @@ public final class VertexAiSessionService implements BaseSessionService {
               .state(
                   apiSession.get("sessionState") == null
                       ? new ConcurrentHashMap<>()
-                      : new ConcurrentHashMap<>(
-                          (Map<String, Object>) apiSession.get("sessionState")))
+                      : objectMapper.convertValue(
+                          apiSession.get("sessionState"),
+                          new TypeReference<ConcurrentHashMap<String, Object>>() {}))
               .lastUpdateTime(updateTimestamp)
               .build();
       sessions.add(session);

@@ -7,7 +7,7 @@
     <artifactId>google-adk-a2a</artifactId>
     <version>0.3.1-SNAPSHOT</version>
   </parent>
-
+  
   <artifactId>google-adk-a2a-core</artifactId>
   <packaging>jar</packaging>
 

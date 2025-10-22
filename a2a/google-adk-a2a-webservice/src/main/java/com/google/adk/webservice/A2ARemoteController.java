@@ -26,27 +26,18 @@ public class A2ARemoteController {
   }
 
   @PostMapping(
-      path = {"/*"},
-      consumes = "application/json",
-      produces = "application/json")
-  public SendMessageResponse sendMessageDebug(@RequestBody SendMessageRequest request) {
-    logger.info("Received remote A2A request: {}", request);
-    return null;
-  }
-
-  @PostMapping(
-      path = {"/message", "/message/"},
+      path = "/v1/message:send",
       consumes = "application/json",
       produces = "application/json")
   public SendMessageResponse sendMessage(@RequestBody SendMessageRequest request) {
-    logger.info("Received remote A2A request: {}", request);
+    logger.debug("Received remote A2A request: {}", request);
     SendMessageResponse response = service.handle(request);
-    logger.info("Responding with remote A2A payload: {}", response);
+    logger.debug("Responding with remote A2A payload: {}", response);
     return response;
   }
 
   /** Get agent card information */
-  @GetMapping(path = "/message/.well-known/agent-card.json", produces = "application/json")
+  @GetMapping(path = "/v1/.well-known/agent-card.json", produces = "application/json")
   public ResponseEntity<AgentCard> getAgentCard() {
     return ResponseEntity.ok(service.getAgentCard());
   }

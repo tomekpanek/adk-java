@@ -9,7 +9,7 @@
     <artifactId>google-adk-parent</artifactId>
     <version>0.3.1-SNAPSHOT</version>
   </parent>
-
+  
   <artifactId>google-adk-sample-a2a-remote</artifactId>
   <name>Google ADK - Sample - A2A Remote Prime Service</name>
   <description>Spring Boot service that exposes the remote prime-check agent over the A2A REST interface.</description>
@@ -48,14 +48,14 @@
 
     <dependency>
       <groupId>com.google.adk</groupId>
-      <artifactId>google-adk-a2a</artifactId>
-      <version>${project.version}</version>
+      <artifactId>google-adk-a2a-core</artifactId>
+      <version>0.3.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>com.google.adk</groupId>
       <artifactId>google-adk-a2a-webservice</artifactId>
-      <version>${project.version}</version>
+      <version>0.3.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>

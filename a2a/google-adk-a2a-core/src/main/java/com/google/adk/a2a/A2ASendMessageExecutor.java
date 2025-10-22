@@ -12,6 +12,7 @@ import com.google.adk.artifacts.InMemoryArtifactService;
 import com.google.adk.events.Event;
 import com.google.adk.memory.InMemoryMemoryService;
 import com.google.adk.runner.Runner;
+import com.google.adk.sessions.BaseSessionService;
 import com.google.adk.sessions.InMemorySessionService;
 import com.google.adk.sessions.Session;
 import com.google.common.collect.ImmutableList;
@@ -47,7 +48,7 @@ public final class A2ASendMessageExecutor {
         String invocationId);
   }
 
-  private final InMemorySessionService sessionService;
+  private final BaseSessionService sessionService;
   private final String appName;
   @Nullable private final Runner runner;
   @Nullable private final Duration agentTimeout;
@@ -60,6 +61,15 @@ public final class A2ASendMessageExecutor {
     this.appName = appName;
     this.runner = null;
     this.agentTimeout = null;
+  }
+
+  public A2ASendMessageExecutor(
+      Runner runner, String appName, Duration agentTimeout, AgentCard agentCard) {
+    this.sessionService = runner.sessionService();
+    this.appName = appName;
+    this.runner = runner;
+    this.agentTimeout = agentTimeout;
+    this.agentCard = agentCard;
   }
 
   public A2ASendMessageExecutor(

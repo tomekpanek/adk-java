@@ -28,7 +28,7 @@
     </dependency>
     <dependency>
       <groupId>com.google.adk</groupId>
-      <artifactId>google-adk-a2a</artifactId>
+      <artifactId>google-adk-a2a-core</artifactId>
       <version>${google-adk-a2a.version}</version>
     </dependency>
     <dependency>

@@ -7,6 +7,7 @@ import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
@@ -32,7 +33,7 @@ public class A2ARemoteConfiguration {
   private static final String DEFAULT_APP_NAME = "a2a-remote-service";
   private static final long DEFAULT_TIMEOUT_SECONDS = 15L;
 
-  // @Bean
+  @Bean
   public A2ASendMessageExecutor a2aSendMessageExecutor(
       BaseAgent agent,
       @Value("${a2a.remote.appName:" + DEFAULT_APP_NAME + "}") String appName,

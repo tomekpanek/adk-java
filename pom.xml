@@ -15,7 +15,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.google.adk</groupId>
+  <groupId>com.sabre.adk</groupId>
   <artifactId>google-adk-parent</artifactId>
   <version>0.3.1-SNAPSHOT</version><!-- {x-version-update:google-adk:current} -->
   <packaging>pom</packaging>
@@ -26,13 +26,6 @@
 
   <modules>
     <module>core</module>
-    <module>dev</module>
-    <module>maven_plugin</module>
-    <module>contrib/langchain4j</module>
-    <module>contrib/samples</module>
-    <module>tutorials/city-time-weather</module>
-    <module>a2a</module>
-    <module>a2a/webservice</module>
   </modules>
 
   <properties>

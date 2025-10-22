@@ -78,7 +78,7 @@ public final class A2AAgentRun {
   }
 
   public static void main(String[] args) {
-    String primeAgentUrl = args.length > 0 ? args[0] : "http://localhost:9876/a2a/prime_agent";
+    String primeAgentUrl = args.length > 0 ? args[0] : "http://localhost:8080/a2a/remote";
     LlmAgent agent = A2AAgent.createRootAgent(primeAgentUrl);
     A2AAgentRun a2aRun = new A2AAgentRun(agent);
 

@@ -296,7 +296,6 @@ public final class ExampleUtilsTest {
     assertThat(ExampleUtils.buildExampleSi(exampleProvider, "test query")).isEqualTo(expected);
   }
 
-  // TODO: sduskis - Fix this test case.  It should show "EXAMPLE 1:"
   @Test
   public void buildFewShotFewShot_onlyOutputExample() {
     Example example =
@@ -313,6 +312,8 @@ public final class ExampleUtilsTest {
         Begin few-shot
         The following are examples of user queries and model responses using the available tools.
 
+        EXAMPLE 1:
+        Begin example
         [model]
         Model response
         End example

@@ -2,10 +2,12 @@ package com.google.adk.webservice;
 
 import com.google.adk.a2a.A2ASendMessageExecutor;
 import com.google.adk.agents.BaseAgent;
+import com.google.adk.runner.Runner;
 import io.a2a.spec.AgentCard;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -35,7 +37,8 @@ public class A2ARemoteConfiguration {
 
   @Bean
   public A2ASendMessageExecutor a2aSendMessageExecutor(
-      BaseAgent agent,
+      @Autowired(required = false) BaseAgent agent,
+      @Autowired(required = false) Runner runner,
       @Value("${a2a.remote.appName:" + DEFAULT_APP_NAME + "}") String appName,
       @Value("${a2a.remote.timeoutSeconds:" + DEFAULT_TIMEOUT_SECONDS + "}") long timeoutSeconds,
       AgentCard agentCard) {
@@ -43,7 +46,13 @@ public class A2ARemoteConfiguration {
         "Initializing A2A send message executor for appName {} with timeout {}s",
         appName,
         timeoutSeconds);
-    return new A2ASendMessageExecutor(
-        agent, appName, Duration.ofSeconds(timeoutSeconds), agentCard);
+    if (agent != null) {
+      return new A2ASendMessageExecutor(
+          agent, appName, Duration.ofSeconds(timeoutSeconds), agentCard);
+    } else if (runner != null) {
+      return new A2ASendMessageExecutor(
+          runner, appName, Duration.ofSeconds(timeoutSeconds), agentCard);
+    }
+    throw new IllegalStateException("Neither BaseAgent nor Runner is available!");
   }
 }

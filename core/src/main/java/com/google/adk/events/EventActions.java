@@ -17,7 +17,6 @@ package com.google.adk.events;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.adk.tools.ToolConfirmation;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.genai.types.Part;
 import java.util.Objects;
@@ -37,8 +36,6 @@ public class EventActions {
   private Optional<String> transferToAgent = Optional.empty();
   private Optional<Boolean> escalate = Optional.empty();
   private ConcurrentMap<String, ConcurrentMap<String, Object>> requestedAuthConfigs =
-      new ConcurrentHashMap<>();
-  private ConcurrentMap<String, ToolConfirmation> requestedToolConfirmations =
       new ConcurrentHashMap<>();
   private Optional<Boolean> endInvocation = Optional.empty();
 
@@ -116,16 +113,6 @@ public class EventActions {
     this.requestedAuthConfigs = requestedAuthConfigs;
   }
 
-  @JsonProperty("requestedToolConfirmations")
-  public ConcurrentMap<String, ToolConfirmation> requestedToolConfirmations() {
-    return requestedToolConfirmations;
-  }
-
-  public void setRequestedToolConfirmations(
-      ConcurrentMap<String, ToolConfirmation> requestedToolConfirmations) {
-    this.requestedToolConfirmations = requestedToolConfirmations;
-  }
-
   @JsonProperty("endInvocation")
   public Optional<Boolean> endInvocation() {
     return endInvocation;
@@ -161,7 +148,6 @@ public class EventActions {
         && Objects.equals(transferToAgent, that.transferToAgent)
         && Objects.equals(escalate, that.escalate)
         && Objects.equals(requestedAuthConfigs, that.requestedAuthConfigs)
-        && Objects.equals(requestedToolConfirmations, that.requestedToolConfirmations)
         && Objects.equals(endInvocation, that.endInvocation);
   }
 
@@ -174,7 +160,6 @@ public class EventActions {
         transferToAgent,
         escalate,
         requestedAuthConfigs,
-        requestedToolConfirmations,
         endInvocation);
   }
 
@@ -187,8 +172,6 @@ public class EventActions {
     private Optional<Boolean> escalate = Optional.empty();
     private ConcurrentMap<String, ConcurrentMap<String, Object>> requestedAuthConfigs =
         new ConcurrentHashMap<>();
-    private ConcurrentMap<String, ToolConfirmation> requestedToolConfirmations =
-        new ConcurrentHashMap<>();
     private Optional<Boolean> endInvocation = Optional.empty();
 
     public Builder() {}
@@ -200,8 +183,6 @@ public class EventActions {
       this.transferToAgent = eventActions.transferToAgent();
       this.escalate = eventActions.escalate();
       this.requestedAuthConfigs = new ConcurrentHashMap<>(eventActions.requestedAuthConfigs());
-      this.requestedToolConfirmations =
-          new ConcurrentHashMap<>(eventActions.requestedToolConfirmations());
       this.endInvocation = eventActions.endInvocation();
     }
 
@@ -249,13 +230,6 @@ public class EventActions {
     }
 
     @CanIgnoreReturnValue
-    @JsonProperty("requestedToolConfirmations")
-    public Builder requestedToolConfirmations(ConcurrentMap<String, ToolConfirmation> value) {
-      this.requestedToolConfirmations = value;
-      return this;
-    }
-
-    @CanIgnoreReturnValue
     @JsonProperty("endInvocation")
     public Builder endInvocation(boolean endInvocation) {
       this.endInvocation = Optional.of(endInvocation);
@@ -282,9 +256,6 @@ public class EventActions {
       if (other.requestedAuthConfigs() != null) {
         this.requestedAuthConfigs.putAll(other.requestedAuthConfigs());
       }
-      if (other.requestedToolConfirmations() != null) {
-        this.requestedToolConfirmations.putAll(other.requestedToolConfirmations());
-      }
       if (other.endInvocation().isPresent()) {
         this.endInvocation = other.endInvocation();
       }
@@ -299,7 +270,6 @@ public class EventActions {
       eventActions.setTransferToAgent(this.transferToAgent);
       eventActions.setEscalate(this.escalate);
       eventActions.setRequestedAuthConfigs(this.requestedAuthConfigs);
-      eventActions.setRequestedToolConfirmations(this.requestedToolConfirmations);
       eventActions.setEndInvocation(this.endInvocation);
       return eventActions;
     }

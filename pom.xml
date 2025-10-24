@@ -15,7 +15,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.google.adk</groupId>
+  <groupId>com.sabre.adk</groupId>
   <artifactId>google-adk-parent</artifactId>
   <version>0.3.1-SNAPSHOT</version><!-- {x-version-update:google-adk:current} -->
   <packaging>pom</packaging>
@@ -26,13 +26,6 @@
 
   <modules>
     <module>core</module>
-    <module>dev</module>
-    <module>maven_plugin</module>
-    <module>contrib/langchain4j</module>
-    <module>contrib/samples</module>
-    <module>tutorials/city-time-weather</module>
-    <module>a2a</module>
-    <module>a2a/webservice</module>
   </modules>
 
   <properties>
@@ -383,27 +376,11 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <groupId>org.sonatype.central</groupId>
-          <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>0.8.0</version>
-          <extensions>true</extensions>
-          <configuration>
-            <publishingServerId>central</publishingServerId>
-          </configuration>
-        </plugin>
+
       </plugins>
   </pluginManagement>
     <plugins>
-      <plugin>
-        <groupId>org.sonatype.central</groupId>
-        <artifactId>central-publishing-maven-plugin</artifactId>
-        <version>0.8.0</version>
-        <extensions>true</extensions>
-        <configuration>
-          <publishingServerId>central</publishingServerId>
-        </configuration>
-      </plugin>
+
       <plugin>
         <groupId>com.spotify.fmt</groupId>
         <artifactId>fmt-maven-plugin</artifactId>
@@ -537,14 +514,15 @@
   </developers>
   <distributionManagement>
     <repository>
-      <id>central</id>
-      <name>Maven Central Repository</name>
-      <url>https://central.sonatype.com/api/v1/publisher</url>
+      <id>sabre-repo-stages</id>
+      <url>https://repository.sabre-gcp.com/repository/maven-staging/</url>
+      <layout>default</layout>
     </repository>
     <snapshotRepository>
-      <id>central</id>
-      <name>Maven Central Repository Snapshots</name>
-      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <id>gcp.repository.sabre.com-snapshots</id>
+      <url>https://repository.sabre-gcp.com/repository/maven-snapshots/</url>
+      <layout>default</layout>
+      <uniqueVersion>true</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
 </project>

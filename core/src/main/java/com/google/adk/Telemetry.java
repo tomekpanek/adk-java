@@ -50,9 +50,16 @@ import org.slf4j.LoggerFactory;
 public class Telemetry {
 
   private static final Logger log = LoggerFactory.getLogger(Telemetry.class);
-  private static final Tracer tracer = GlobalOpenTelemetry.getTracer("gcp.vertex.agent");
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static Tracer tracer = GlobalOpenTelemetry.getTracer("gcp.vertex.agent");
 
   private Telemetry() {}
+
+  /** Sets the OpenTelemetry instance to be used for tracing. This is for testing purposes only. */
+  public static void setTracerForTesting(Tracer tracer) {
+    Telemetry.tracer = tracer;
+  }
 
   /**
    * Traces tool call arguments.

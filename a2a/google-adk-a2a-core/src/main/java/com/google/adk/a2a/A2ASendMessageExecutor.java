@@ -63,10 +63,9 @@ public final class A2ASendMessageExecutor {
     this.agentTimeout = null;
   }
 
-  public A2ASendMessageExecutor(
-      Runner runner, String appName, Duration agentTimeout, AgentCard agentCard) {
+  public A2ASendMessageExecutor(Runner runner, Duration agentTimeout, AgentCard agentCard) {
     this.sessionService = runner.sessionService();
-    this.appName = appName;
+    this.appName = runner.appName();
     this.runner = runner;
     this.agentTimeout = agentTimeout;
     this.agentCard = agentCard;

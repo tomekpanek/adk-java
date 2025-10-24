@@ -50,8 +50,7 @@ public class A2ARemoteConfiguration {
       return new A2ASendMessageExecutor(
           agent, appName, Duration.ofSeconds(timeoutSeconds), agentCard);
     } else if (runner != null) {
-      return new A2ASendMessageExecutor(
-          runner, appName, Duration.ofSeconds(timeoutSeconds), agentCard);
+      return new A2ASendMessageExecutor(runner, Duration.ofSeconds(timeoutSeconds), agentCard);
     }
     throw new IllegalStateException("Neither BaseAgent nor Runner is available!");
   }

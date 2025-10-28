@@ -9,7 +9,7 @@
     <artifactId>google-adk-parent</artifactId>
     <version>0.3.1-SNAPSHOT</version><!-- {x-version-update:google-adk:current} -->
   </parent>
-
+  
   <artifactId>google-adk-sample-a2a-remote</artifactId>
   <name>Google ADK - Sample - A2A Remote Prime Service</name>
   <description>Spring Boot service that exposes the remote prime-check agent over the A2A REST interface.</description>
@@ -48,14 +48,14 @@
 
     <dependency>
       <groupId>com.google.adk</groupId>
-      <artifactId>google-adk-a2a</artifactId>
-      <version>${project.version}</version>
+      <artifactId>google-adk-a2a-core</artifactId>
+      <version>0.3.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>com.google.adk</groupId>
       <artifactId>google-adk-a2a-webservice</artifactId>
-      <version>${project.version}</version>
+      <version>0.3.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>
@@ -94,35 +94,6 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring-boot.version}</version>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.6.0</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>.</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>**/*.jar</exclude>
-            <exclude>target/**</exclude>
-          </excludes>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

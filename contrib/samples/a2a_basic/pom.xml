@@ -33,7 +33,7 @@
     </dependency>
     <dependency>
       <groupId>com.google.adk</groupId>
-      <artifactId>google-adk-a2a</artifactId>
+      <artifactId>google-adk-a2a-core</artifactId>
       <version>${google-adk-a2a.version}</version>
     </dependency>
     <dependency>
@@ -55,25 +55,7 @@
           <parameters>true</parameters>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.6.0</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>.</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
